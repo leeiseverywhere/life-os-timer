@@ -15,9 +15,9 @@ export const COLOR_LABELS: Record<string, { label: string; bg: string; text: str
 };
 
 export const CATEGORIES = [
-  { id: "earn", emoji: "💰", label: "Earn", examples: "주식 강의, 갤러리 작업" },
-  { id: "build", emoji: "🌱", label: "Build", examples: "바이올린, 독서, 스페인어" },
-  { id: "live", emoji: "🏃", label: "Live", examples: "운동, 식사, 건강 관리" },
+  { id: "earn",    emoji: "💰", label: "Earn",    examples: "주식 강의, 갤러리 작업" },
+  { id: "build",   emoji: "🌱", label: "Build",   examples: "바이올린, 독서, 스페인어" },
+  { id: "live",    emoji: "🏃", label: "Live",    examples: "운동, 식사, 건강 관리" },
   { id: "connect", emoji: "🤝", label: "Connect", examples: "소셜 약속, 브랜딩" },
 ] as const;
 
@@ -26,9 +26,11 @@ export type CategoryId = (typeof CATEGORIES)[number]["id"];
 export interface CalendarEvent {
   id: string;
   summary: string;
-  start: string;
+  start: string;        // ISO dateTime OR date (YYYY-MM-DD)
   end: string;
   colorId?: string;
   description?: string;
-  category?: CategoryId;
+  category?: CategoryId; // [category:xxx] 태그에서 파싱
+  isAllDay?: boolean;    // start.dateTime이 없으면 true
+  isTimerDone?: boolean; // [타이머완료] 태그 여부
 }

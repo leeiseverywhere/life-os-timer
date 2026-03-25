@@ -159,6 +159,7 @@ export default function Dashboard() {
             events={events}
             onSelectEvent={handleToggleFromList}
             activeEventId={selectedEvent?.id}
+            onRefresh={fetchEvents}
           />
         ) : (
           <Timer

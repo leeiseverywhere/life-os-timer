@@ -4,7 +4,7 @@ import { CATEGORIES, CategoryId } from "@/lib/calendar-types";
 
 interface CategoryPickerProps {
   selected: CategoryId | null;
-  onSelect: (id: CategoryId) => void;
+  onSelect: (id: CategoryId | null) => void;
 }
 
 export default function CategoryPicker({ selected, onSelect }: CategoryPickerProps) {
@@ -13,7 +13,7 @@ export default function CategoryPicker({ selected, onSelect }: CategoryPickerPro
       {CATEGORIES.map((cat) => (
         <button
           key={cat.id}
-          onClick={() => onSelect(cat.id)}
+          onClick={() => onSelect(selected === cat.id ? null : cat.id)}
           className={`flex flex-col items-start rounded-xl px-4 py-3 text-left transition-all active:scale-[0.97] ${
             selected === cat.id
               ? "bg-gray-900 text-white ring-2 ring-gray-900"
