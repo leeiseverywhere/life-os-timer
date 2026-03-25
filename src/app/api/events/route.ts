@@ -12,7 +12,8 @@ export async function GET() {
     const events = await getTodayEvents(session.accessToken);
     return NextResponse.json(events);
   } catch (error: unknown) {
-    console.error("Failed to fetch events:", error);
-    return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Failed to fetch events:", msg);
+    return NextResponse.json({ error: "Failed to fetch events", detail: msg }, { status: 500 });
   }
 }
