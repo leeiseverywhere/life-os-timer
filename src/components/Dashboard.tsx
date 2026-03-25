@@ -36,16 +36,38 @@ export default function Dashboard() {
     fetchEvents();
   }, [fetchEvents]);
 
-  const handleSelectEvent = (event: CalendarEvent) => {
+  // 오늘 일정에서 이벤트 선택 → 타이머 탭으로 이동
+  const handleSelectFromList = (event: CalendarEvent) => {
     setSelectedEvent(event);
     setView("timer");
   };
 
+  // 오늘 일정에서 이벤트 선택 해제 (토글)
+  const handleToggleFromList = (event: CalendarEvent | null) => {
+    if (!event) {
+      setSelectedEvent(null);
+      return;
+    }
+    if (event.id === selectedEvent?.id) {
+      setSelectedEvent(null); // 선택 해제
+    } else {
+      setSelectedEvent(event);
+      setView("timer");
+    }
+  };
+
+  // 타이머에서 이벤트 선택/해제
+  const handleSelectFromTimer = (event: CalendarEvent | null) => {
+    setSelectedEvent(event);
+  };
+
+  // 타이머 완료 → 오늘 일정 탭으로 이동 + 토스트
   const handleTimerComplete = () => {
     setSelectedEvent(null);
-    setView("events");
     fetchEvents();
-    setToast({ visible: true, message: "활동이 Google Calendar에 기록되었습니다 ✓" });
+    setToast({ visible: true, message: "✓ 활동이 Google Calendar에 기록되었습니다" });
+    // 잠깐 딜레이 후 탭 이동 (토스트 보이게)
+    setTimeout(() => setView("events"), 800);
   };
 
   const handleTimerClear = () => {
@@ -53,16 +75,13 @@ export default function Dashboard() {
     setView("events");
   };
 
-  // Compute plan vs done stats
-  const plans = events.filter((e) => !e.colorId || e.colorId === "8");
+  // 통계
+  const plans    = events.filter((e) => !e.colorId || e.colorId === "8");
   const completed = events.filter((e) => e.colorId === "9");
-  const external = events.filter((e) => e.colorId === "11");
+  const external  = events.filter((e) => e.colorId === "11");
 
-  const today = new Date();
-  const dateStr = today.toLocaleDateString("ko-KR", {
-    month: "long",
-    day: "numeric",
-    weekday: "short",
+  const dateStr = new Date().toLocaleDateString("ko-KR", {
+    month: "long", day: "numeric", weekday: "short",
   });
 
   return (
@@ -76,11 +95,7 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
             {session?.user?.image && (
-              <img
-                src={session.user.image}
-                alt=""
-                className="h-7 w-7 rounded-full"
-              />
+              <img src={session.user.image} alt="" className="h-7 w-7 rounded-full" />
             )}
             <button
               onClick={() => signOut()}
@@ -92,8 +107,8 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Progress bar — plan vs completed */}
-      {!loading && plans.length > 0 && (
+      {/* Progress bar */}
+      {!loading && (plans.length + completed.length) > 0 && (
         <div className="border-b border-gray-100">
           <div className="mx-auto max-w-lg px-5 py-2.5">
             <div className="flex items-center justify-between text-xs">
@@ -104,13 +119,9 @@ export default function Dashboard() {
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-100">
               <div
-                className="h-full rounded-full bg-blue-500 transition-all duration-500"
+                className="h-full rounded-full bg-blue-500 transition-all duration-700"
                 style={{
-                  width: `${
-                    plans.length + completed.length > 0
-                      ? (completed.length / (plans.length + completed.length)) * 100
-                      : 0
-                  }%`,
+                  width: `${(completed.length / (plans.length + completed.length)) * 100}%`,
                 }}
               />
             </div>
@@ -121,26 +132,19 @@ export default function Dashboard() {
       {/* Navigation tabs */}
       <div className="border-b border-gray-100">
         <div className="mx-auto flex max-w-lg">
-          <button
-            onClick={() => setView("events")}
-            className={`flex-1 py-2.5 text-center text-xs font-medium transition-colors ${
-              view === "events"
-                ? "border-b-2 border-gray-900 text-gray-900"
-                : "text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            오늘 일정
-          </button>
-          <button
-            onClick={() => setView("timer")}
-            className={`flex-1 py-2.5 text-center text-xs font-medium transition-colors ${
-              view === "timer"
-                ? "border-b-2 border-gray-900 text-gray-900"
-                : "text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            타이머
-          </button>
+          {(["events", "timer"] as View[]).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`flex-1 py-2.5 text-center text-xs font-medium transition-colors ${
+                view === v
+                  ? "border-b-2 border-gray-900 text-gray-900"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {v === "events" ? "오늘 일정" : "타이머"}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -153,19 +157,21 @@ export default function Dashboard() {
         ) : view === "events" ? (
           <EventList
             events={events}
-            onSelectEvent={handleSelectEvent}
+            onSelectEvent={handleToggleFromList}
             activeEventId={selectedEvent?.id}
           />
         ) : (
           <Timer
             selectedEvent={selectedEvent}
+            events={events}
             onComplete={handleTimerComplete}
             onClear={handleTimerClear}
+            onSelectEvent={handleSelectFromTimer}
           />
         )}
       </main>
 
-      {/* Bottom summary bar */}
+      {/* Bottom bar (오늘 일정 탭) */}
       {view === "events" && !loading && (
         <div className="sticky bottom-0 border-t border-gray-100 bg-white/80 backdrop-blur-xl">
           <div className="mx-auto flex max-w-lg items-center justify-between px-5 py-3">
@@ -184,10 +190,7 @@ export default function Dashboard() {
               </span>
             </div>
             <button
-              onClick={() => {
-                setSelectedEvent(null);
-                setView("timer");
-              }}
+              onClick={() => { setSelectedEvent(null); setView("timer"); }}
               className="rounded-xl bg-gray-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-gray-800 active:scale-[0.97]"
             >
               + 새 활동
